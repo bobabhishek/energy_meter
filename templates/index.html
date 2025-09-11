@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy Meter Reading System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .result {
+            display: none;
+            margin-top: 20px;
+        }
+        .row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        label {
+            font-weight: bold;
+        }
+        input[type="date"], select {
+            padding: 6px 8px;
+        }
+        button {
+            padding: 6px 10px;
+        }
+    </style>
+    </head>
+<body>
+    <h1>Energy Meter Reading System</h1>
+    
+    <div class="container">
+        <h2>Upload Meter Image</h2>
+        <form id="uploadForm">
+            <input type="file" id="meterImage" accept=".jpg,.jpeg,.png" required>
+            <button type="submit">Upload</button>
+        </form>
+    </div>
+
+    <div class="container result" id="readingResult">
+        <h2>Reading Results</h2>
+        <p>Reading: <span id="reading"></span> kWh</p>
+        <p>Timestamp: <span id="timestamp"></span></p>
+        <p>Location: <span id="location"></span></p>
+    </div>
+
+    <div class="container">
+        <h2>Consumption Analysis</h2>
+        <div class="row">
+            <label for="period">Period</label>
+            <select id="period">
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+            </select>
+        </div>
+        <div class="row">
+            <label for="start">Start</label>
+            <input type="date" id="start">
+            <label for="end">End</label>
+            <input type="date" id="end">
+            <button onclick="getConsumption()">Calculate</button>
+        </div>
+        <div id="consumptionResult"></div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('file', document.getElementById('meterImage').files[0]);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                document.getElementById('reading').textContent = data.reading;
+                document.getElementById('timestamp').textContent = data.metadata.timestamp;
+                document.getElementById('location').textContent = 
+                    `${data.metadata.latitude}, ${data.metadata.longitude}`;
+                document.getElementById('readingResult').style.display = 'block';
+            } catch (error) {
+                alert('Error uploading file');
+            }
+        };
+
+        async function getConsumption() {
+            const period = document.getElementById('period').value;
+            const start = document.getElementById('start').value;
+            const end = document.getElementById('end').value;
+
+            const params = new URLSearchParams({ period });
+            if (start) params.append('start', start);
+            if (end) params.append('end', end);
+
+            try {
+                const response = await fetch(`/consumption?${params.toString()}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                const result = document.getElementById('consumptionResult');
+                result.innerHTML = `<h3>${period.charAt(0).toUpperCase() + period.slice(1)} Consumption</h3>
+                                  <pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                alert('Error calculating consumption');
+            }
+        }
+    </script>
+</body>
+</html>
+
+
