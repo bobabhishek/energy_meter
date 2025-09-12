@@ -31,7 +31,7 @@ class DataHandler:
             print('DEBUG: DataFrame is empty after filtering')
             return []
 
-        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
         df = df.sort_values('timestamp')
 
         # Only filter if start/end are provided and not empty
