@@ -37,11 +37,27 @@
         button {
             padding: 6px 10px;
         }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+        th, td {
+            border: 1px solid #bbb;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #e0e0e0;
+        }
+        .hidden {
+            display: none;
+        }
     </style>
-    </head>
+</head>
 <body>
     <h1>Energy Meter Reading System</h1>
-    
+
     <div class="container">
         <h2>Upload Meter Image</h2>
         <form id="uploadForm">
@@ -72,9 +88,21 @@
             <input type="date" id="start">
             <label for="end">End</label>
             <input type="date" id="end">
-            <button onclick="getConsumption()">Calculate</button>
+            <button type="button" onclick="getConsumption()">Calculate</button>
         </div>
         <div id="consumptionResult"></div>
+        <table id="consumptionTable" class="hidden">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>First Reading</th>
+                    <th>Last Reading</th>
+                    <th>Consumption</th>
+                </tr>
+            </thead>
+            <tbody id="consumptionTableBody">
+            </tbody>
+        </table>
     </div>
 
     <script>
@@ -89,7 +117,7 @@
                     body: formData
                 });
                 const data = await response.json();
-                
+
                 if (data.error) {
                     alert(data.error);
                     return;
@@ -97,7 +125,7 @@
 
                 document.getElementById('reading').textContent = data.reading;
                 document.getElementById('timestamp').textContent = data.metadata.timestamp;
-                document.getElementById('location').textContent = 
+                document.getElementById('location').textContent =
                     `${data.metadata.latitude}, ${data.metadata.longitude}`;
                 document.getElementById('readingResult').style.display = 'block';
             } catch (error) {
@@ -117,15 +145,34 @@
             try {
                 const response = await fetch(`/consumption?${params.toString()}`);
                 const data = await response.json();
-                
+
                 if (data.error) {
                     alert(data.error);
                     return;
                 }
 
-                const result = document.getElementById('consumptionResult');
-                result.innerHTML = `<h3>${period.charAt(0).toUpperCase() + period.slice(1)} Consumption</h3>
-                                  <pre>${JSON.stringify(data, null, 2)}</pre>`;
+                // Hide JSON view, show table
+                document.getElementById('consumptionResult').innerHTML = `<h3>${period.charAt(0).toUpperCase() + period.slice(1)} Consumption</h3>`;
+                const table = document.getElementById('consumptionTable');
+                const tbody = document.getElementById('consumptionTableBody');
+                tbody.innerHTML = '';
+
+                if (Array.isArray(data) && data.length > 0) {
+                    table.classList.remove('hidden');
+                    data.forEach(row => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${row.timestamp || ''}</td>
+                                <td>${row.first !== undefined ? row.first : ''}</td>
+                                <td>${row.last !== undefined ? row.last : ''}</td>
+                                <td>${row.consumption !== undefined ? row.consumption : ''}</td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    table.classList.add('hidden');
+                    document.getElementById('consumptionResult').innerHTML += '<p>No consumption data found for the selected period.</p>';
+                }
             } catch (error) {
                 alert('Error calculating consumption');
             }
@@ -133,5 +180,3 @@
     </script>
 </body>
 </html>
-
-

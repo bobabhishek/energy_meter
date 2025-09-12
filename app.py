@@ -64,8 +64,8 @@ def get_consumption():
     start = request.args.get('start')
     end = request.args.get('end')
     try:
-        consumption = data_handler.calculate_consumption(period, start, end)
-        return jsonify(consumption.to_dict())
+          result = data_handler.calculate_consumption(period, start, end)
+          return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
