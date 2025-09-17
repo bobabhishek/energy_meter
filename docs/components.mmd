@@ -1,0 +1,31 @@
+flowchart TB
+  subgraph Web[Web Layer]
+    A[Flask app.py]
+    T[Jinja2 templates/index.html]
+  end
+
+  subgraph OCR[Reading Extraction]
+    MR[MeterReader]
+    P[preprocess_image]
+    OCR1[pytesseract]
+    Clean[_clean_reading]
+  end
+
+  subgraph Data[Data Layer]
+    DH[DataHandler]
+    CSV[(data/readings.csv)]
+  end
+
+  A -- render --> T
+  A -- POST /upload --> MR
+  MR -- calls --> P
+  P --> OCR1
+  OCR1 --> Clean
+  MR -- returns reading, metadata --> A
+  A -- save --> DH
+  DH --> CSV
+  A -- GET /consumption --> DH
+  DH -- resample + aggregate --> A
+  A -- JSON --> T
+
+

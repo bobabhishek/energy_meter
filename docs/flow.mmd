@@ -1,0 +1,28 @@
+flowchart LR
+  subgraph Client [Browser UI]
+    U[Upload Form] -->|multipart/form-data /upload| S1
+    C[Consumption Filters] -->|GET /consumption?period&start&end| S3
+  end
+
+  subgraph Server [Flask App]
+    S1[Route: /upload] --> V[Validate + Save File]
+    V --> MR[MeterReader.extract_reading()]
+    MR --> P[preprocess_image()]
+    P --> OCR[pytesseract OCR (configs 7/6/8)]
+    OCR --> Clean[_clean_reading()]
+    Clean --> Meta[generate_metadata()]
+    Meta --> DH1[DataHandler.save_reading()]
+    DH1 --> CSV[(data/readings.csv)]
+    S1 -->|JSON {reading, metadata}| UI1[Show Reading]
+
+    S3[Route: /consumption] --> DH2[DataHandler.calculate_consumption()]
+    DH2 --> ReadCSV[Load + parse timestamps + sort]
+    ReadCSV --> Resample[Resample by D/W/M]
+    Resample --> Agg[first/last/count + consumption=last-first]
+    Agg --> Filter[count >= 2]
+    Filter --> JSON[Return [{timestamp, first, last, consumption}]]
+  end
+
+  JSON --> UI2[Render Table]
+
+
